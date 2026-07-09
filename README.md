@@ -1,75 +1,63 @@
-# React + TypeScript + Vite
+# CreatorOS 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive, premium workspace and productivity hub designed specifically for content creators. CreatorOS integrates your entire workflow—from AI brainstorming and task management to brand deals and financial analytics—all in one responsive dashboard.
 
-Currently, two official plugins are available:
+## Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. **AI Creation Suite (Gemini-Powered)**
+   * **Title Generator:** Generate high-CTR titles matching various styles (clickbait, educational, storytelling).
+   * **Script Outline Writer:** Produce structured outlines for videos based on niche, tone, and target duration.
+   * **Thumbnail Ideas:** Brainstorm visual compositions, text overlays, and style elements.
+   * **Caption Generator:** Draft platform-optimized descriptions and captions for YouTube, TikTok, and Instagram.
 
-## React Compiler
+2. **Interactive Workspace Tools**
+   * **Content Calendar:** Plan and visualize upload schedules, shoot days, and sponsor deadlines.
+   * **Kanban Task Manager:** Track video production stages (Scripting, Filming, Editing, Ready) with drag-and-drop ease.
+   * **Asset Manager:** Organize B-roll links, brand kit logos, soundtracks, and video templates.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. **Creator Business Suite**
+   * **Brand Deals Tracker:** Log sponsor pipelines, deliverables, contract rates, and payment statuses.
+   * **Finance Hub:** Monitor your business health with real-time graphs showing income, expenses, and monthly profits.
+   * **Competitor Tracker:** Keep tabs on creator channels in your niche and run **AI Content Gap Analysis** to find underserved topics.
 
-## Expanding the ESLint configuration
+4. **Chat Assistant**
+   * A persistent Gemini-powered companion to brainstorm, draft outreach emails, or structure brand negotiations.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Technical Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* **Frontend:** React 19, TypeScript, Vite
+* **Styling:** Custom glassmorphic CSS styling
+* **Icons:** Lucide React
+* **AI Engine:** Google Gemini API (`gemini-2.5-flash`)
+* **Storage:** Automatic local persistence (`localStorage`)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
-```
+## Getting Started
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Prerequisites
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+* Node.js (v18 or higher recommended)
+* A Google Gemini API Key (get one for free at [Google AI Studio](https://aistudio.google.com/))
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
 
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Lohith4458/CreatorOs.git
+   cd CreatorOs
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:5173](http://localhost:5173) in your browser. Configure your Gemini API Key in the **Settings** panel to activate live AI generation.
