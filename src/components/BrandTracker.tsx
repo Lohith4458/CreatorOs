@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Plus, 
   Trash2, 
-  DollarSign, 
+  IndianRupee, 
   Calendar, 
   ChevronRight, 
   ChevronLeft, 
@@ -188,7 +188,7 @@ export default function BrandTracker({ brandDeals, setBrandDeals, setTransaction
               {/* Column Total Value */}
               <div style={columnTotalValueStyle}>
                 <span>Pipeline: </span>
-                <strong>${totalVal.toLocaleString()}</strong>
+                <strong>₹{totalVal.toLocaleString()}</strong>
               </div>
 
               {/* Cards wrapper */}
@@ -206,7 +206,7 @@ export default function BrandTracker({ brandDeals, setBrandDeals, setTransaction
                     {/* Meta section */}
                     <div style={dealMetaRowStyle}>
                       <div style={dealPriceStyle}>
-                        <DollarSign size={13} />
+                        <IndianRupee size={13} />
                         <span>{deal.value.toLocaleString()}</span>
                       </div>
                       
@@ -268,7 +268,7 @@ export default function BrandTracker({ brandDeals, setBrandDeals, setTransaction
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
-                  <label>Contract Value ($ USD)</label>
+                  <label>Contract Value (₹ INR)</label>
                   <input 
                     type="number" 
                     className="input-field" 
@@ -371,7 +371,7 @@ export default function BrandTracker({ brandDeals, setBrandDeals, setTransaction
               
               <div style={detailValueBox}>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contract Value</div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#10b981' }}>${selectedDeal.value.toLocaleString()}</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#10b981' }}>₹{selectedDeal.value.toLocaleString()}</div>
               </div>
 
               <div style={infoRowsLayout}>

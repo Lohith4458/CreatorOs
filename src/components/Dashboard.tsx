@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   Calendar, 
-  DollarSign, 
   CheckSquare, 
   Briefcase, 
   ArrowUpRight, 
   Sparkles,
-  Play
+  Bot,
+  Video,
+  Activity,
+  Layers,
+  ChevronRight
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -20,436 +23,438 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ events, brandDeals, finances, tasks, setActiveTab, creatorName }: DashboardProps) {
-  // Calculations
-  const pendingTasksCount = tasks.filter(t => t.status !== 'completed').length;
+  const [hoveredDataPoint, setHoveredDataPoint] = useState<any | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Dynamic day-time greeting
+  const getGreeting = () => {
+    const hr = new Date().getHours();
+    if (hr < 12) return 'Good Morning 🌅';
+    if (hr < 17) return 'Good Afternoon ☀️';
+    return 'Good Evening 🌌';
+  };
+
+  // Calculations for Today's Productivity
+  const activeTasksCount = tasks.filter(t => t.status !== 'completed').length;
+  const activeSponsorsCount = brandDeals.filter(d => ['signed', 'in-progress'].includes(d.status)).length;
   
-  // Calculate total monthly revenue from finances (current month)
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const monthlyRevenue = finances
-    .filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'income';
-    })
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const activeSponsorships = brandDeals.filter(d => ['negotiating', 'signed', 'in-progress'].includes(d.status));
-  const activeSponsorsCount = activeSponsorships.length;
-  const sponsorshipPipelineValue = activeSponsorships.reduce((sum, d) => sum + d.value, 0);
-
-  // Next scheduled video
-  const nextVideo = events
+  // Total Projects (Tasks + Brand Deals)
+  const totalProjects = activeTasksCount + activeSponsorsCount;
+  
+  // Scheduled events on Calendar
+  const scheduledCount = events.filter(e => e.status !== 'published').length;
+  const nextEvent = events
     .filter(e => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
+  // Weekly subscriber analytics data (last 7 days simulation)
+  const chartData = [
+    { day: 'Mon', value: 145000, change: '+450' },
+    { day: 'Tue', value: 145600, change: '+600' },
+    { day: 'Wed', value: 146100, change: '+500' },
+    { day: 'Thu', value: 146800, change: '+700' },
+    { day: 'Fri', value: 147300, change: '+500' },
+    { day: 'Sat', value: 147800, change: '+500' },
+    { day: 'Sun', value: 148250, change: '+450' }
+  ];
+
+  // SVG dimensions
+  const svgWidth = 500;
+  const svgHeight = 180;
+  const paddingX = 40;
+  const paddingY = 20;
+
+  // Map data to SVG coordinates
+  const points = chartData.map((d, index) => {
+    const x = paddingX + (index * (svgWidth - paddingX * 2)) / (chartData.length - 1);
+    // Value range mapping: 144000 to 149000
+    const minVal = 144000;
+    const maxVal = 149000;
+    const y = svgHeight - paddingY - ((d.value - minVal) * (svgHeight - paddingY * 2)) / (maxVal - minVal);
+    return { x, y, ...d, index };
+  });
+
+  // SVG path construction
+  const linePath = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${svgHeight - paddingY} L ${points[0].x} ${svgHeight - paddingY} Z`;
+
+  // Simulated recent AI conversations list
+  const recentConversations = [
+    {
+      id: 'conv1',
+      title: 'Ultimate 2026 Desk Setup Tour Script Outline',
+      type: 'script',
+      time: '2 hours ago',
+      desc: '10-minute outline co-written with Gemini. Interactive tech tour format.'
+    },
+    {
+      id: 'conv2',
+      title: 'Squarespace Sponsor Outreach Email Draft',
+      type: 'chat',
+      time: 'Yesterday',
+      desc: 'Negotiation outline for 1x Instagram Reel sponsorship.'
+    },
+    {
+      id: 'conv3',
+      title: '5 Accessories I Can\'t Live Without Titles',
+      type: 'title',
+      time: '3 days ago',
+      desc: 'Generated 10 high-CTR title variations across clickbait and storytelling styles.'
+    }
+  ];
+
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div className="dashboard-header">
+      
+      {/* Header Greeting */}
+      <div className="dashboard-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1.5rem' }}>
         <div>
-          <h1>Welcome back, {creatorName || 'Creator'}</h1>
-          <p>Here is how your channels are performing today.</p>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.03em' }}>
+            Hello, {(!creatorName || creatorName === 'Creator Pro') ? 'Abdul' : creatorName} 👋
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginTop: '0.25rem', fontWeight: '500' }}>
+            {getGreeting()}
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setActiveTab('ai-suite')}>
+        <button className="btn btn-primary" onClick={() => setActiveTab('content-generator')}>
           <Sparkles size={16} />
-          <span>Generate Ideas</span>
+          <span>New AI Draft</span>
         </button>
       </div>
 
-      {/* Metrics Section */}
-      <div className="metric-grid">
-        {/* Metric 1 */}
-        <div className="glass-panel metric-card glass-panel-glow">
-          <div className="metric-card-header">
-            <span>Monthly Revenue</span>
-            <DollarSign size={18} color="#10b981" />
+      {/* Today's Productivity Title */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <h2 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8b5cf6', fontWeight: '700' }}>
+          Today's Productivity
+        </h2>
+        
+        {/* Productivity 2x2 Grid */}
+        <div className="metric-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+          
+          {/* Card 1: AI Usage */}
+          <div className="glass-panel metric-card glass-panel-glow" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>AI Usage</span>
+              <Bot size={18} color="#8b5cf6" />
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>86 / 150</div>
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', marginTop: '4px' }}>
+              <div style={{ width: '57%', height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', borderRadius: '10px' }}></div>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Daily requests consumed</span>
           </div>
-          <div className="metric-card-value">${monthlyRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div className="metric-card-change up">
-            <TrendingUp size={14} />
-            <span>+14.2% from last month</span>
-          </div>
-        </div>
 
-        {/* Metric 2 */}
-        <div className="glass-panel metric-card glass-panel-glow">
-          <div className="metric-card-header">
-            <span>Active Brand Deals</span>
-            <Briefcase size={18} color="#6366f1" />
+          {/* Card 2: Projects */}
+          <div className="glass-panel metric-card glass-panel-glow" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Active Projects</span>
+              <Layers size={18} color="#3b82f6" />
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{totalProjects} Active</div>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <span>{activeTasksCount} Tasks</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+              <span>{activeSponsorsCount} Brand Contracts</span>
+            </div>
           </div>
-          <div className="metric-card-value">{activeSponsorsCount}</div>
-          <div className="metric-card-change" style={{ color: 'var(--text-muted)' }}>
-            <span>Pipeline: ${sponsorshipPipelineValue.toLocaleString()}</span>
-          </div>
-        </div>
 
-        {/* Metric 3 */}
-        <div className="glass-panel metric-card glass-panel-glow">
-          <div className="metric-card-header">
-            <span>Pending Checklist Tasks</span>
-            <CheckSquare size={18} color="#8b5cf6" />
+          {/* Card 3: Followers */}
+          <div className="glass-panel metric-card glass-panel-glow" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Followers</span>
+              <TrendingUp size={18} color="#10b981" />
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>148,250</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>
+              <TrendingUp size={12} />
+              <span>+3,200 this week</span>
+            </div>
           </div>
-          <div className="metric-card-value">{pendingTasksCount}</div>
-          <div className="metric-card-change" style={{ color: 'var(--text-muted)' }}>
-            <span>Total tasks: {tasks.length}</span>
-          </div>
-        </div>
 
-        {/* Metric 4 */}
-        <div className="glass-panel metric-card glass-panel-glow">
-          <div className="metric-card-header">
-            <span>Followers / Subs</span>
-            <TrendingUp size={18} color="#3b82f6" />
+          {/* Card 4: Scheduled */}
+          <div className="glass-panel metric-card glass-panel-glow" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Scheduled Content</span>
+              <Calendar size={18} color="#f59e0b" />
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{scheduledCount} Scheduled</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              {nextEvent ? `Next: ${nextEvent.title}` : "No upcoming events"}
+            </div>
           </div>
-          <div className="metric-card-value">148,250</div>
-          <div className="metric-card-change up">
-            <TrendingUp size={14} />
-            <span>+3,200 this week</span>
-          </div>
+
         </div>
       </div>
 
-      {/* Main Dashboard Layout Split */}
-      <div style={layoutSplitStyle}>
+      {/* Main Grid: 2-Column Split */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem', alignItems: 'stretch' }}>
         
-        {/* Left Side: Schedule and Sponsorships */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', flex: 2, minWidth: 0 }}>
+        {/* Left Column: Weekly Analytics Chart & Recent Projects */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
-          {/* Calendar Spotlight */}
-          <div className="glass-panel" style={cardPanelStyle}>
-            <div style={cardHeaderStyle}>
+          {/* Weekly Analytics Chart */}
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={20} color="#6366f1" />
-                <h2>Content Spotlight</h2>
+                <Activity size={18} color="#6366f1" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>Weekly Analytics Chart</h2>
               </div>
-              <button onClick={() => setActiveTab('calendar')} style={textButtonStyle}>
-                <span>Full Calendar</span>
-                <ArrowUpRight size={16} />
-              </button>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '500' }}>Followers growth (last 7 days)</div>
             </div>
-            
-            {nextVideo ? (
-              <div style={spotlightVideoStyle}>
-                <div style={platformIconWrapperStyle(nextVideo.platform)}>
-                  {nextVideo.platform === 'youtube' && (
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="#ff0000"><path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.516 0-9.387.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.507 9.387.507 9.387.507s7.517 0 9.387-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                  )}
-                  {nextVideo.platform === 'instagram' && (
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#e1306c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                  )}
-                  {nextVideo.platform === 'tiktok' && <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#00f2fe' }}>🎦</span>}
-                  {nextVideo.platform === 'twitter' && <span style={{ fontSize: '1.25rem', color: '#fff' }}>𝕏</span>}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={spotlightLabelStyle}>NEXT PUBLISHING</div>
-                  <h3 style={spotlightTitleStyle}>{nextVideo.title}</h3>
-                  <div style={spotlightMetaStyle}>
-                    <span>Scheduled for: {new Date(nextVideo.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                    <span style={dotDivider} />
-                    <span className={`badge badge-${nextVideo.platform}`}>{nextVideo.platform.toUpperCase()}</span>
-                    <span style={dotDivider} />
-                    <span style={{ textTransform: 'capitalize', color: '#8b5cf6', fontWeight: '600' }}>{nextVideo.status}</span>
-                  </div>
-                </div>
-                <button className="btn btn-secondary" onClick={() => setActiveTab('ai-suite')} style={{ alignSelf: 'center' }}>
-                  <Play size={14} />
-                  <span>Script</span>
-                </button>
-              </div>
-            ) : (
-              <div style={noDataStyle}>
-                <p>No content scheduled. Start filling your calendar!</p>
-                <button className="btn btn-secondary" onClick={() => setActiveTab('calendar')} style={{ marginTop: '0.5rem' }}>Add Event</button>
-              </div>
-            )}
-          </div>
 
-          {/* Active Sponsorships */}
-          <div className="glass-panel" style={cardPanelStyle}>
-            <div style={cardHeaderStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Briefcase size={20} color="#8b5cf6" />
-                <h2>Sponsorship Pipeline</h2>
-              </div>
-              <button onClick={() => setActiveTab('brand-deals')} style={textButtonStyle}>
-                <span>Manage Deals</span>
-                <ArrowUpRight size={16} />
-              </button>
-            </div>
-            
-            <div style={brandListStyle}>
-              {activeSponsorships.slice(0, 3).map((deal, idx) => (
-                <div key={deal.id || idx} style={brandRowStyle}>
-                  <div style={brandBadgeStyle}>{deal.brand.charAt(0).toUpperCase()}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{deal.brand}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{deal.deliverable}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '700', color: '#10b981', fontSize: '0.95rem' }}>${deal.value.toLocaleString()}</div>
-                    <span className="badge" style={statusBadgeStyle(deal.status)}>
-                      {deal.status.replace('-', ' ')}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {activeSponsorships.length === 0 && (
-                <div style={noDataStyle}>
-                  <p>No active sponsorships. Pitch new brands to start tracking!</p>
+            {/* Interactive SVG Chart */}
+            <div style={{ position: 'relative', width: '100%', height: `${svgHeight}px`, background: 'rgba(0,0,0,0.1)', borderRadius: '8px', overflow: 'visible' }}>
+              <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" height="100%" style={{ overflow: 'visible' }}>
+                <defs>
+                  {/* Grid Line Gradient */}
+                  <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal Guide Lines */}
+                {[0, 1, 2, 3].map((g) => {
+                  const y = paddingY + (g * (svgHeight - paddingY * 2)) / 3;
+                  return (
+                    <line key={g} x1={paddingX} y1={y} x2={svgWidth - paddingX} y2={y} stroke="rgba(255,255,255,0.04)" strokeDasharray="3,3" />
+                  );
+                })}
+
+                {/* Area Fill Gradient under the Curve */}
+                <path d={areaPath} fill="url(#chartGlow)" />
+
+                {/* Main Curve Line */}
+                <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" />
+
+                {/* Interactive Hover Vertical Slices / Interactive Points */}
+                {points.map((p) => (
+                  <g key={p.index} 
+                     onMouseEnter={() => {
+                       setHoveredDataPoint(p);
+                       setHoveredIndex(p.index);
+                     }}
+                     onMouseLeave={() => {
+                       setHoveredDataPoint(null);
+                       setHoveredIndex(null);
+                     }}
+                     style={{ cursor: 'pointer' }}
+                  >
+                    {/* Hover column background bar */}
+                    <rect x={p.x - 20} y={paddingY} width="40" height={svgHeight - paddingY * 2} fill="transparent" />
+
+                    {/* Node Dot */}
+                    <circle cx={p.x} cy={p.y} r={hoveredIndex === p.index ? 6 : 4} fill={hoveredIndex === p.index ? '#ffffff' : '#8b5cf6'} stroke="#6366f1" strokeWidth="2" style={{ transition: 'all 0.15s ease' }} />
+                  </g>
+                ))}
+
+                {/* X Axis Labels */}
+                {points.map((p) => (
+                  <text key={p.index} x={p.x} y={svgHeight - 4} textAnchor="middle" fill="var(--text-subtle)" fontSize="10" fontWeight="600">
+                    {p.day}
+                  </text>
+                ))}
+              </svg>
+
+              {/* Dynamic Interactive Tooltip */}
+              {hoveredDataPoint && (
+                <div style={{
+                  position: 'absolute',
+                  top: `${hoveredDataPoint.y - 55}px`,
+                  left: `${(hoveredDataPoint.x / svgWidth) * 100}%`,
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(10, 15, 30, 0.95)',
+                  border: '1px solid rgba(99, 102, 241, 0.5)',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 10px rgba(99, 102, 241, 0.25)',
+                  pointerEvents: 'none',
+                  zIndex: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '2px',
+                  animation: 'fadeIn 0.15s ease-out'
+                }}>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>{hoveredDataPoint.day}</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'white' }}>{hoveredDataPoint.value.toLocaleString()}</span>
+                  <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: '700' }}>{hoveredDataPoint.change}</span>
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Right Side: AI Quick Strategy & Tasks */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', flex: 1, minWidth: '300px' }}>
-          
-          {/* AI Strategy Advisor */}
-          <div className="glass-panel" style={{ ...cardPanelStyle, border: '1px solid rgba(99, 102, 241, 0.25)', background: 'linear-gradient(145deg, rgba(13, 19, 33, 0.6) 0%, rgba(99, 102, 241, 0.04) 100%)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <Sparkles size={20} color="#8b5cf6" style={{ filter: 'drop-shadow(0 0 5px rgba(139, 92, 246, 0.5))' }} />
-              <h2>AI Strategy Advisor</h2>
-            </div>
-            
-            <div style={aiBoxStyle}>
-              <p style={{ fontSize: '0.88rem', lineHeight: '1.45', color: '#d1d5db' }}>
-                "Based on competitor trends and viewer demand in the <strong>Tech & Productivity</strong> niche, your audience engagement peaks on <strong>Thursdays at 6 PM</strong>. 
-                <br /><br />
-                Consider scripting a <strong>'Desk Setup & Automation tour'</strong>. Comment logs show 14 questions regarding your cable management and audio setup."
-              </p>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={() => setActiveTab('ai-suite')}>
-                  Draft Script
-                </button>
-                <button className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={() => setActiveTab('comments')}>
-                  See Comments
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Tasks Quick List */}
-          <div className="glass-panel" style={cardPanelStyle}>
-            <div style={cardHeaderStyle}>
+          {/* Recent Projects List */}
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckSquare size={20} color="#10b981" />
-                <h2>Tasks</h2>
+                <Video size={18} color="#3b82f6" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>Recent Projects</h2>
               </div>
-              <button onClick={() => setActiveTab('tasks')} style={textButtonStyle}>
-                <span>All Tasks</span>
-                <ArrowUpRight size={16} />
+              <button className="btn btn-secondary" onClick={() => setActiveTab('calendar')} style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '4px' }}>
+                <span>Calendar</span>
+                <ArrowUpRight size={12} />
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {tasks.filter(t => t.status !== 'completed').slice(0, 4).map((task, idx) => (
-                <div key={task.id || idx} style={taskRowStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={taskDotStyle(task.priority)} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                      {task.title}
-                    </span>
+              {events.slice(0, 3).map((video, idx) => (
+                <div key={video.id || idx} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setActiveTab('calendar')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
+                }}
+                >
+                  {/* Platform Identifier */}
+                  <div style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    backgroundColor: video.platform === 'youtube' ? 'rgba(255,0,0,0.1)' : 
+                                     video.platform === 'instagram' ? 'rgba(236,72,153,0.1)' : 
+                                     video.platform === 'linkedin' ? 'rgba(0,119,181,0.1)' : 'rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flexShrink: 0
+                  }}>
+                    {video.platform === 'youtube' && <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 'bold' }}>YT</span>}
+                    {video.platform === 'instagram' && <span style={{ fontSize: '0.75rem', color: '#ff8fa3', fontWeight: 'bold' }}>IG</span>}
+                    {video.platform === 'linkedin' && <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 'bold' }}>LN</span>}
+                    {video.platform === 'x' && <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 'bold' }}>X</span>}
                   </div>
-                  {task.dueDate && (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                  )}
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {video.title}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Publishing: {new Date(video.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+
+                  <span className={`badge badge-${video.platform}`} style={{ textTransform: 'capitalize', padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}>
+                    {video.status}
+                  </span>
                 </div>
               ))}
-              {tasks.filter(t => t.status !== 'completed').length === 0 && (
-                <div style={noDataStyle}>
-                  <p>All caught up! No pending tasks.</p>
+              
+              {events.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-subtle)', fontSize: '0.85rem' }}>
+                  No projects currently active.
                 </div>
               )}
             </div>
-          </div>
 
+          </div>
+        </div>
+
+        {/* Right Column: Recent AI Conversations */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Bot size={18} color="#8b5cf6" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>Recent AI Conversations</h2>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setActiveTab('ai-studio')} style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', gap: '4px' }}>
+                <span>Chat</span>
+                <ArrowUpRight size={12} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+              {recentConversations.map((conv, idx) => (
+                <div key={conv.id || idx} style={{
+                  padding: '1rem',
+                  background: 'rgba(99, 102, 241, 0.02)',
+                  border: '1px solid rgba(99, 102, 241, 0.08)',
+                  borderRadius: 'var(--radius-md)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+                onClick={() => setActiveTab(conv.type === 'chat' ? 'ai-studio' : 'content-generator')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.02)';
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.08)';
+                }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="badge" style={{ 
+                      fontSize: '0.65rem', 
+                      backgroundColor: conv.type === 'script' ? 'rgba(139, 92, 246, 0.15)' : 
+                                       conv.type === 'chat' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(236, 72, 153, 0.15)',
+                      color: conv.type === 'script' ? '#c084fc' : 
+                             conv.type === 'chat' ? '#60a5fa' : '#f472b6',
+                      border: 'none',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase'
+                    }}>
+                      {conv.type}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-subtle)' }}>{conv.time}</span>
+                  </div>
+
+                  <div style={{ fontWeight: '600', fontSize: '0.88rem', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '200px' }}>{conv.title}</span>
+                    <ChevronRight size={14} color="var(--text-subtle)" />
+                  </div>
+
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                    {conv.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* AI Assistant Callout */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(99, 102, 241, 0.02))',
+              border: '1px solid rgba(139, 92, 246, 0.15)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem',
+              marginTop: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={14} color="#a5b4fc" />
+                <span style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Brainstorm Tip</span>
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                Your cable management and audio setup comment count is rising! Pitch an audio kit overview to Squarespace in your next integration call.
+              </p>
+            </div>
+
+          </div>
         </div>
 
       </div>
+
     </div>
   );
 }
-
-// Inline Styles for Layout
-const layoutSplitStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '2rem',
-};
-
-const cardPanelStyle: React.CSSProperties = {
-  padding: '1.5rem',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-};
-
-const cardHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-};
-
-const textButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#6366f1',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.25rem',
-  fontSize: '0.85rem',
-  fontWeight: '600',
-};
-
-const spotlightVideoStyle: React.CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.02)',
-  border: '1px solid rgba(255, 255, 255, 0.05)',
-  borderRadius: 'var(--radius-md)',
-  padding: '1rem',
-  display: 'flex',
-  gap: '1rem',
-  alignItems: 'center',
-};
-
-const platformIconWrapperStyle = (platform: string): React.CSSProperties => {
-  let bg = 'rgba(255, 255, 255, 0.05)';
-  if (platform === 'youtube') bg = 'rgba(255, 0, 0, 0.1)';
-  else if (platform === 'instagram') bg = 'rgba(225, 48, 108, 0.1)';
-  else if (platform === 'tiktok') bg = 'rgba(0, 242, 254, 0.1)';
-  
-  return {
-    width: '48px',
-    height: '48px',
-    borderRadius: 'var(--radius-sm)',
-    backgroundColor: bg,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  };
-};
-
-const spotlightLabelStyle: React.CSSProperties = {
-  fontSize: '0.7rem',
-  fontWeight: '700',
-  letterSpacing: '0.05em',
-  color: 'var(--color-primary)',
-  marginBottom: '0.25rem',
-};
-
-const spotlightTitleStyle: React.CSSProperties = {
-  fontSize: '1.1rem',
-  fontWeight: '600',
-  marginBottom: '0.25rem',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-};
-
-const spotlightMetaStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  fontSize: '0.8rem',
-  color: 'var(--text-muted)',
-};
-
-const dotDivider: React.CSSProperties = {
-  width: '3px',
-  height: '3px',
-  borderRadius: '50%',
-  backgroundColor: 'var(--text-subtle)',
-};
-
-const brandListStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem',
-};
-
-const brandRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '1rem',
-  padding: '0.75rem',
-  borderRadius: 'var(--radius-sm)',
-  background: 'rgba(255, 255, 255, 0.02)',
-  border: '1px solid rgba(255, 255, 255, 0.04)',
-};
-
-const brandBadgeStyle: React.CSSProperties = {
-  width: '36px',
-  height: '36px',
-  borderRadius: '50%',
-  backgroundColor: 'rgba(99, 102, 241, 0.15)',
-  color: '#8b5cf6',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  fontWeight: 'bold',
-  fontSize: '0.9rem',
-};
-
-const statusBadgeStyle = (status: string): React.CSSProperties => {
-  let color = '#9ca3af';
-  let bg = 'rgba(255, 255, 255, 0.05)';
-  
-  if (status === 'signed') { color = '#3b82f6'; bg = 'rgba(59, 130, 246, 0.15)'; }
-  else if (status === 'in-progress') { color = '#f59e0b'; bg = 'rgba(245, 158, 11, 0.15)'; }
-  else if (status === 'paid') { color = '#10b981'; bg = 'rgba(16, 185, 129, 0.15)'; }
-  
-  return {
-    color,
-    backgroundColor: bg,
-    border: `1px solid ${color}33`,
-    fontSize: '0.65rem',
-    fontWeight: '700',
-    marginTop: '0.2rem',
-  };
-};
-
-const aiBoxStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(99, 102, 241, 0.03)',
-  border: '1px solid rgba(99, 102, 241, 0.1)',
-  borderRadius: 'var(--radius-sm)',
-  padding: '1rem',
-};
-
-const taskRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '0.6rem 0.75rem',
-  borderRadius: 'var(--radius-sm)',
-  background: 'rgba(255, 255, 255, 0.02)',
-  border: '1px solid rgba(255, 255, 255, 0.04)',
-};
-
-const taskDotStyle = (priority: string): React.CSSProperties => {
-  let backgroundColor = '#9ca3af';
-  if (priority === 'high') backgroundColor = 'var(--color-danger)';
-  else if (priority === 'medium') backgroundColor = 'var(--color-warning)';
-  else if (priority === 'low') backgroundColor = 'var(--color-info)';
-
-  return {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor,
-    boxShadow: `0 0 6px ${backgroundColor}`,
-  };
-};
-
-const noDataStyle: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '1.5rem',
-  color: 'var(--text-muted)',
-  fontSize: '0.88rem',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '0.5rem',
-};

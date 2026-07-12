@@ -23,6 +23,7 @@ interface SettingsPanelProps {
   onClearData: () => void;
   onImportData: (jsonData: string) => boolean;
   onExportData: () => string;
+  setActiveTab: (tab: string) => void;
 }
 
 export default function SettingsPanel({
@@ -34,7 +35,8 @@ export default function SettingsPanel({
   setCreatorNiche,
   onClearData,
   onImportData,
-  onExportData
+  onExportData,
+  setActiveTab
 }: SettingsPanelProps) {
   const [showKey, setShowKey] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -117,6 +119,14 @@ export default function SettingsPanel({
           <Settings size={24} color="#6366f1" />
           <h1>Settings & Configurations</h1>
         </div>
+        <button 
+          onClick={() => setActiveTab('landing')}
+          className="btn btn-secondary"
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <Tv size={15} color="#8b5cf6" />
+          <span>View Landing Page</span>
+        </button>
       </div>
 
       {/* Main Split Layout */}

@@ -13,6 +13,8 @@ import ChatAssistant from './components/ChatAssistant';
 import TaskManager from './components/TaskManager';
 import SettingsPanel from './components/SettingsPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import LandingPage from './components/LandingPage';
+import TeamManager from './components/TeamManager';
 
 // ----------------------------------------------------
 // Default Starter Data (For Instant User Wow Factor)
@@ -31,7 +33,7 @@ const DEFAULT_EVENTS = [
   {
     id: 'e2',
     title: 'Day in the Life of a Creator (Vlog)',
-    platform: 'tiktok',
+    platform: 'linkedin',
     date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0], // yesterday
     time: '12:00',
     status: 'published',
@@ -183,7 +185,7 @@ const DEFAULT_COMPETITORS = [
     name: 'Ali Abdaal',
     subscribers: '5.2M',
     focusArea: 'Productivity & Growth',
-    lastVideoTitle: 'How to build a $10,000/month side hustle',
+    lastVideoTitle: 'How to build a ₹1,00,000/month side hustle',
     lastVideoViews: '450K',
     channelUrl: 'https://youtube.com/c/aliabdaal'
   },
@@ -199,14 +201,14 @@ const DEFAULT_COMPETITORS = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('landing');
   
   // Cross-App selected item redirect state
   const [selectedEventForAI, setSelectedEventForAI] = useState<any | null>(null);
 
   // Local Storage States
   const [apiKey, setApiKey] = useLocalStorage<string>('creatoros_api_key', '');
-  const [creatorName, setCreatorName] = useLocalStorage<string>('creatoros_name', 'Creator Pro');
+  const [creatorName, setCreatorName] = useLocalStorage<string>('creatoros_name', 'Abdul');
   const [creatorNiche, setCreatorNiche] = useLocalStorage<string>('creatoros_niche', 'Tech & Productivity');
   
   const [events, setEvents] = useLocalStorage<any[]>('creatoros_events', DEFAULT_EVENTS);
@@ -282,16 +284,24 @@ export default function App() {
     <div className="app-container">
       
       {/* Sidebar Navigation */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        creatorName={creatorName}
-        creatorNiche={creatorNiche}
-      />
+      {activeTab !== 'landing' && (
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          creatorName={creatorName}
+          creatorNiche={creatorNiche}
+        />
+      )}
 
       {/* Main Panel Viewport */}
-      <div className="main-content">
-        <div className="content-body">
+      <div className={activeTab === 'landing' ? "landing-viewport" : "main-content"}>
+        <div className={activeTab === 'landing' ? "landing-body" : "content-body"}>
+          {activeTab === 'landing' && (
+            <LandingPage 
+              onGetStarted={() => setActiveTab('dashboard')}
+            />
+          )}
+
           {activeTab === 'dashboard' && (
             <Dashboard 
               events={events}
@@ -312,7 +322,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'ai-suite' && (
+          {activeTab === 'content-generator' && (
             <AISuite 
               apiKey={apiKey}
               selectedEventForAI={selectedEventForAI}
@@ -322,7 +332,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'brand-deals' && (
+          {activeTab === 'brand-kit' && (
             <BrandTracker 
               brandDeals={brandDeals}
               setBrandDeals={setBrandDeals}
@@ -330,39 +340,24 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'finances' && (
-            <FinanceTracker 
+          {activeTab === 'analytics' && (
+            <AnalyticsDashboard 
               finances={finances}
               setFinances={setFinances}
-            />
-          )}
-
-          {activeTab === 'analytics' && (
-            <AnalyticsDashboard />
-          )}
-
-          {activeTab === 'competitors' && (
-            <CompetitorTracker 
               competitors={competitors}
               setCompetitors={setCompetitors}
               apiKey={apiKey}
             />
           )}
 
-          {activeTab === 'assets' && (
+          {activeTab === 'media-library' && (
             <AssetManager 
               assets={assets}
               setAssets={setAssets}
             />
           )}
 
-          {activeTab === 'comments' && (
-            <CommentAnalyzer 
-              apiKey={apiKey}
-            />
-          )}
-
-          {activeTab === 'chat' && (
+          {activeTab === 'ai-studio' && (
             <ChatAssistant 
               apiKey={apiKey}
               creatorNiche={creatorNiche}
@@ -370,8 +365,8 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'tasks' && (
-            <TaskManager 
+          {activeTab === 'team' && (
+            <TeamManager 
               tasks={tasks}
               setTasks={setTasks}
             />
@@ -388,6 +383,7 @@ export default function App() {
               onClearData={handleClearWorkspace}
               onImportData={handleImportBackup}
               onExportData={handleExportBackup}
+              setActiveTab={setActiveTab}
             />
           )}
         </div>

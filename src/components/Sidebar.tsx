@@ -1,18 +1,15 @@
-import React from 'react';
 import { 
-  LayoutDashboard, 
+  Home,
+  Bot,
+  PenTool,
   Calendar, 
-  Sparkles, 
-  Briefcase, 
-  DollarSign, 
-  BarChart3, 
+  TrendingUp, 
+  Palette, 
+  Image, 
   Users, 
-  FolderHeart, 
-  MessageSquareCode, 
-  Bot, 
-  CheckSquare, 
   Settings,
-  Tv
+  Tv,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,17 +21,14 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorNiche }: SidebarProps) {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'ai-studio', label: 'AI Studio', icon: Bot },
+    { id: 'content-generator', label: 'Content Generator', icon: PenTool },
     { id: 'calendar', label: 'Content Calendar', icon: Calendar },
-    { id: 'ai-suite', label: 'AI Suite', icon: Sparkles },
-    { id: 'brand-deals', label: 'Brand Deals', icon: Briefcase },
-    { id: 'finances', label: 'Finance Tracker', icon: DollarSign },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'competitors', label: 'Competitor Tracker', icon: Users },
-    { id: 'assets', label: 'Asset Library', icon: FolderHeart },
-    { id: 'comments', label: 'Comment Analyzer', icon: MessageSquareCode },
-    { id: 'chat', label: 'AI Chat Assistant', icon: Bot },
-    { id: 'tasks', label: 'Task Manager', icon: CheckSquare },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'brand-kit', label: 'Brand Kit', icon: Palette },
+    { id: 'media-library', label: 'Media Library', icon: Image },
+    { id: 'team', label: 'Team', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -71,13 +65,32 @@ export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorN
 
       <div className="sidebar-profile" style={profileCardStyle}>
         <div style={avatarStyle}>
-          {creatorName ? creatorName.charAt(0).toUpperCase() : 'C'}
+          {(!creatorName || creatorName === 'Creator Pro') ? 'A' : creatorName.charAt(0).toUpperCase()}
         </div>
         <div style={profileInfoStyle}>
-          <div style={profileNameStyle}>{creatorName || 'Your Name'}</div>
+          <div style={profileNameStyle}>{(!creatorName || creatorName === 'Creator Pro') ? 'Abdul' : creatorName}</div>
           <div style={profileNicheStyle}>{creatorNiche || 'Content Creator'}</div>
         </div>
-        <div style={proBadgeStyle}>PRO</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <div style={proBadgeStyle}>PRO</div>
+          <button 
+            onClick={() => setActiveTab('landing')}
+            title="Exit to Landing Page"
+            style={logoutBtnStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+              const icon = e.currentTarget.querySelector('svg');
+              if (icon) icon.setAttribute('stroke', '#ef4444');
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              const icon = e.currentTarget.querySelector('svg');
+              if (icon) icon.setAttribute('stroke', 'var(--text-muted)');
+            }}
+          >
+            <LogOut size={13} color="var(--text-muted)" style={{ transition: 'stroke var(--transition-fast)' }} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -206,4 +219,17 @@ const proBadgeStyle: React.CSSProperties = {
   border: '1px solid rgba(99, 102, 241, 0.3)',
   padding: '0.1rem 0.35rem',
   borderRadius: '4px',
+};
+
+const logoutBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '4px',
+  borderRadius: '4px',
+  transition: 'background var(--transition-fast)',
+  marginTop: '2px',
 };

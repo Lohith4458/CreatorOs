@@ -8,9 +8,11 @@ import {
   Mail, 
   Lightbulb, 
   ChevronRight,
-  Code
+  Code,
+  MessageSquareCode
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
+import CommentAnalyzer from './CommentAnalyzer';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -31,6 +33,7 @@ const PRESET_PROMPTS = [
 ];
 
 export default function ChatAssistant({ apiKey, creatorNiche, creatorName }: ChatAssistantProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'chat' | 'comments'>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', content: `Hi ${creatorName || 'there'}! I am your CreatorOS AI Creative Coach. I'm aware of your profile context (${creatorNiche || 'General Creative'}).\n\nHow can I help you brainstorm, outline scripts, refine hooks, or review brand sponsorships today?` }
   ]);
@@ -80,95 +83,115 @@ export default function ChatAssistant({ apiKey, creatorNiche, creatorName }: Cha
   };
 
   return (
-    <div className="animate-fade-in" style={chatLayout}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
       
-      {/* Header */}
-      <div style={chatHeader}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Bot size={24} color="#8b5cf6" style={{ filter: 'drop-shadow(0 0 6px rgba(139, 92, 246, 0.4))' }} />
-          <div>
-            <h2 style={{ fontSize: '1.2rem', color: 'white' }}>AI Creative Coach</h2>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Connected to Gemini 2.5 Flash</span>
-          </div>
-        </div>
+      {/* Sub-tab Selector */}
+      <div style={subTabsStyle}>
+        <button onClick={() => setActiveSubTab('chat')} style={subTabButtonStyle(activeSubTab === 'chat')}>
+          <Bot size={15} />
+          <span>Creative Coach</span>
+        </button>
+        <button onClick={() => setActiveSubTab('comments')} style={subTabButtonStyle(activeSubTab === 'comments')}>
+          <MessageSquareCode size={15} />
+          <span>Comment Analyzer</span>
+        </button>
       </div>
 
-      {/* Chat Messages Box */}
-      <div className="glass-panel" style={chatWindow}>
-        <div style={messagesList}>
-          {messages.map((msg, index) => (
-            <div 
-              key={index} 
-              style={msg.role === 'user' ? userRowStyle : botRowStyle}
-            >
-              {/* Avatar */}
-              <div style={msg.role === 'user' ? userAvatarStyle : botAvatarStyle}>
-                {msg.role === 'user' ? <User size={15} /> : <Bot size={15} />}
-              </div>
-
-              {/* Bubble */}
-              <div style={msg.role === 'user' ? userBubbleStyle : botBubbleStyle}>
-                <div 
-                  className="markdown-render" 
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} 
-                  style={{ fontSize: '0.9rem', lineHeight: '1.5' }}
-                />
+      {activeSubTab === 'chat' && (
+        <div style={chatLayout}>
+          {/* Header */}
+          <div style={chatHeader}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Bot size={24} color="#8b5cf6" style={{ filter: 'drop-shadow(0 0 6px rgba(139, 92, 246, 0.4))' }} />
+              <div>
+                <h2 style={{ fontSize: '1.2rem', color: 'white' }}>AI Creative Coach</h2>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Connected to Gemini 2.5 Flash</span>
               </div>
             </div>
-          ))}
+          </div>
 
-          {/* Typing Indicator */}
-          {loading && (
-            <div style={botRowStyle}>
-              <div style={botAvatarStyle}>
-                <RefreshCw size={12} className="animate-spin" />
-              </div>
-              <div style={{ ...botBubbleStyle, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span className="dot-pulse" style={dotStyle(1)} />
-                <span className="dot-pulse" style={dotStyle(2)} />
-                <span className="dot-pulse" style={dotStyle(3)} />
-              </div>
+          {/* Chat Messages Box */}
+          <div className="glass-panel" style={chatWindow}>
+            <div style={messagesList}>
+              {messages.map((msg, index) => (
+                <div 
+                  key={index} 
+                  style={msg.role === 'user' ? userRowStyle : botRowStyle}
+                >
+                  {/* Avatar */}
+                  <div style={msg.role === 'user' ? userAvatarStyle : botAvatarStyle}>
+                    {msg.role === 'user' ? <User size={15} /> : <Bot size={15} />}
+                  </div>
+
+                  {/* Bubble */}
+                  <div style={msg.role === 'user' ? userBubbleStyle : botBubbleStyle}>
+                    <div 
+                      className="markdown-render" 
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} 
+                      style={{ fontSize: '0.9rem', lineHeight: '1.5' }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Typing Indicator */}
+              {loading && (
+                <div style={botRowStyle}>
+                  <div style={botAvatarStyle}>
+                    <RefreshCw size={12} className="animate-spin" />
+                  </div>
+                  <div style={{ ...botBubbleStyle, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="dot-pulse" style={dotStyle(1)} />
+                    <span className="dot-pulse" style={dotStyle(2)} />
+                    <span className="dot-pulse" style={dotStyle(3)} />
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Suggestions Row */}
+          {messages.length === 1 && (
+            <div style={suggestionsContainer}>
+              {PRESET_PROMPTS.map((prompt, idx) => {
+                const Icon = prompt.icon;
+                return (
+                  <button 
+                    key={idx} 
+                    onClick={() => handleSendMessage(prompt.text)}
+                    style={suggestionBtnStyle}
+                  >
+                    <Icon size={14} color="#8b5cf6" />
+                    <span>{prompt.text}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
 
-      {/* Suggestions Row */}
-      {messages.length === 1 && (
-        <div style={suggestionsContainer}>
-          {PRESET_PROMPTS.map((prompt, idx) => {
-            const Icon = prompt.icon;
-            return (
-              <button 
-                key={idx} 
-                onClick={() => handleSendMessage(prompt.text)}
-                style={suggestionBtnStyle}
-              >
-                <Icon size={14} color="#8b5cf6" />
-                <span>{prompt.text}</span>
-              </button>
-            );
-          })}
+          {/* Input Form Bar */}
+          <form onSubmit={handleFormSubmit} style={inputFormStyle}>
+            <input 
+              type="text" 
+              className="input-field"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Ask your Creative Coach for advice, drafts, script ideas..."
+              disabled={loading}
+              style={{ flex: 1, borderRadius: 'var(--radius-sm)' }}
+            />
+            <button type="submit" className="btn btn-primary" disabled={loading || !inputMessage.trim()}>
+              <Send size={15} />
+            </button>
+          </form>
         </div>
       )}
 
-      {/* Input Form Bar */}
-      <form onSubmit={handleFormSubmit} style={inputFormStyle}>
-        <input 
-          type="text" 
-          className="input-field"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Ask your Creative Coach for advice, drafts, script ideas..."
-          disabled={loading}
-          style={{ flex: 1, borderRadius: 'var(--radius-sm)' }}
-        />
-        <button type="submit" className="btn btn-primary" disabled={loading || !inputMessage.trim()}>
-          <Send size={15} />
-        </button>
-      </form>
+      {activeSubTab === 'comments' && (
+        <CommentAnalyzer apiKey={apiKey} />
+      )}
 
     </div>
   );
@@ -319,3 +342,30 @@ const dotStyle = (index: number): React.CSSProperties => {
     animationDelay: `${index * 0.15}s`,
   };
 };
+
+const subTabsStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: '0.5rem',
+  padding: '6px',
+  borderRadius: 'var(--radius-md)',
+  background: 'rgba(0, 0, 0, 0.25)',
+  border: '1px solid rgba(255, 255, 255, 0.05)',
+  alignSelf: 'flex-start',
+  marginBottom: '0.5rem',
+};
+
+const subTabButtonStyle = (isActive: boolean): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  padding: '0.6rem 1.2rem',
+  fontSize: '0.85rem',
+  fontWeight: '600',
+  borderRadius: '6px',
+  border: '1px solid transparent',
+  cursor: 'pointer',
+  background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'none',
+  borderColor: isActive ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+  color: isActive ? '#ffffff' : 'var(--text-muted)',
+  transition: 'all var(--transition-fast)',
+});

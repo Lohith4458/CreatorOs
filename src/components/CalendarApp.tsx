@@ -12,7 +12,7 @@ import {
 interface Event {
   id: string;
   title: string;
-  platform: 'youtube' | 'tiktok' | 'instagram' | 'twitter';
+  platform: 'youtube' | 'linkedin' | 'instagram' | 'x';
   date: string; // YYYY-MM-DD
   time: string;
   status: 'draft' | 'scripting' | 'filming' | 'editing' | 'scheduled' | 'published';
@@ -37,7 +37,7 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
 
   // New Event Form State
   const [newTitle, setNewTitle] = useState('');
-  const [newPlatform, setNewPlatform] = useState<'youtube' | 'tiktok' | 'instagram' | 'twitter'>('youtube');
+  const [newPlatform, setNewPlatform] = useState<'youtube' | 'linkedin' | 'instagram' | 'x'>('youtube');
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('12:00');
   const [newStatus, setNewStatus] = useState<Event['status']>('draft');
@@ -62,6 +62,25 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  // Drag & Drop Handlers
+  const handleDragStart = (e: React.DragEvent, eventId: string) => {
+    e.dataTransfer.setData('text/plain', eventId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    const eventId = e.dataTransfer.getData('text/plain');
+    if (!eventId) return;
+
+    setEvents(prev => prev.map(ev => 
+      ev.id === eventId ? { ...ev, date: dateStr } : ev
+    ));
   };
 
   // Add Event
@@ -135,7 +154,7 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
   const handleSendToAISuite = (event: Event) => {
     if (setSelectedEventForAI) {
       setSelectedEventForAI(event);
-      setActiveTab('ai-suite');
+      setActiveTab('content-generator');
     }
   };
 
@@ -158,7 +177,12 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
     const dayEvents = filteredEvents.filter(ev => ev.date === dateStr);
 
     calendarCells.push(
-      <div key={`day-${day}`} style={dayCellStyle}>
+      <div 
+        key={`day-${day}`} 
+        style={dayCellStyle}
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, dateStr)}
+      >
         <div style={dayNumberStyle}>{day}</div>
         <div style={cellEventsContainerStyle}>
           {dayEvents.map(ev => (
@@ -167,13 +191,15 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
               onClick={() => openEditModal(ev)}
               style={eventBadgeStyle(ev.platform)}
               title={ev.title}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, ev.id)}
             >
               <div style={eventBadgeHeader}>
                 <span style={eventBadgePlatformIndicator(ev.platform)}>
                   {ev.platform === 'youtube' && 'YT'}
-                  {ev.platform === 'tiktok' && 'TT'}
+                  {ev.platform === 'linkedin' && 'LN'}
                   {ev.platform === 'instagram' && 'IG'}
-                  {ev.platform === 'twitter' && 'X'}
+                  {ev.platform === 'x' && 'X'}
                 </span>
                 <span style={eventBadgeStatusIndicator(ev.status)} />
               </div>
@@ -198,7 +224,7 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
         {/* Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={filterGroupStyle}>
-            {['all', 'youtube', 'tiktok', 'instagram', 'twitter'].map(platform => (
+            {['all', 'youtube', 'linkedin', 'instagram', 'x'].map(platform => (
               <button
                 key={platform}
                 onClick={() => setSelectedPlatformFilter(platform)}
@@ -209,7 +235,7 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
                   color: selectedPlatformFilter === platform ? '#ffffff' : 'var(--text-muted)'
                 }}
               >
-                {platform.toUpperCase()}
+                {platform === 'x' ? 'X' : platform.toUpperCase()}
               </button>
             ))}
           </div>
@@ -268,9 +294,9 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
                   <label>Platform</label>
                   <select className="select-field" value={newPlatform} onChange={(e) => setNewPlatform(e.target.value as any)}>
                     <option value="youtube">YouTube</option>
-                    <option value="tiktok">TikTok</option>
+                    <option value="linkedin">LinkedIn</option>
                     <option value="instagram">Instagram</option>
-                    <option value="twitter">Twitter / X</option>
+                    <option value="x">X</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -353,9 +379,9 @@ export default function CalendarApp({ events, setEvents, setActiveTab, setSelect
                   <label>Platform</label>
                   <select className="select-field" value={newPlatform} onChange={(e) => setNewPlatform(e.target.value as any)}>
                     <option value="youtube">YouTube</option>
-                    <option value="tiktok">TikTok</option>
+                    <option value="linkedin">LinkedIn</option>
                     <option value="instagram">Instagram</option>
-                    <option value="twitter">Twitter / X</option>
+                    <option value="x">X</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -546,8 +572,9 @@ const eventBadgeStyle = (platform: string): React.CSSProperties => {
   let bg = 'rgba(255,255,255,0.02)';
   
   if (platform === 'youtube') { border = 'rgba(255,0,0,0.3)'; bg = 'rgba(255,0,0,0.06)'; }
-  else if (platform === 'instagram') { border = 'rgba(225,48,108,0.3)'; bg = 'rgba(225,48,108,0.06)'; }
-  else if (platform === 'tiktok') { border = 'rgba(0,242,254,0.3)'; bg = 'rgba(0,242,254,0.06)'; }
+  else if (platform === 'instagram') { border = 'rgba(236,72,153,0.3)'; bg = 'rgba(236,72,153,0.06)'; }
+  else if (platform === 'linkedin') { border = 'rgba(0,119,181,0.3)'; bg = 'rgba(0,119,181,0.06)'; }
+  else if (platform === 'x') { border = 'rgba(255,255,255,0.2)'; bg = 'rgba(255,255,255,0.04)'; }
   
   return {
     padding: '4px 6px',
@@ -572,7 +599,8 @@ const eventBadgePlatformIndicator = (platform: string): React.CSSProperties => {
   let color = 'var(--text-muted)';
   if (platform === 'youtube') color = '#ff4d4d';
   else if (platform === 'instagram') color = '#ff8fa3';
-  else if (platform === 'tiktok') color = '#00f2fe';
+  else if (platform === 'linkedin') color = '#38bdf8';
+  else if (platform === 'x') color = '#ffffff';
   
   return {
     fontSize: '0.6rem',

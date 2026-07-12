@@ -4,8 +4,8 @@ import {
   Trash2, 
   TrendingUp, 
   TrendingDown, 
+  IndianRupee, 
   Percent, 
-  DollarSign, 
   Calendar,
   X,
   Target
@@ -115,7 +115,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
             <TrendingUp size={18} color="#10b981" />
           </div>
           <div className="metric-card-value" style={{ color: '#10b981' }}>
-            ${income.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ₹{income.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -126,7 +126,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
             <TrendingDown size={18} color="#ef4444" />
           </div>
           <div className="metric-card-value" style={{ color: '#ef4444' }}>
-            ${expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ₹{expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -134,10 +134,10 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
         <div className="glass-panel metric-card">
           <div className="metric-card-header">
             <span>Net Profit</span>
-            <DollarSign size={18} color={netProfit >= 0 ? '#6366f1' : '#ef4444'} />
+            <IndianRupee size={18} color={netProfit >= 0 ? '#6366f1' : '#ef4444'} />
           </div>
           <div className="metric-card-value" style={{ color: netProfit >= 0 ? '#6366f1' : '#ef4444' }}>
-            ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ₹{netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
             <Percent size={18} color="#f59e0b" />
           </div>
           <div className="metric-card-value" style={{ color: '#f59e0b' }}>
-            ${estimatedTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ₹{estimatedTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
                 <h2>Monthly Income Target</h2>
               </div>
               <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
-                ${income.toLocaleString()} / ${incomeGoal.toLocaleString()}
+                ₹{income.toLocaleString()} / ₹{incomeGoal.toLocaleString()}
               </span>
             </div>
             
@@ -176,7 +176,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               <span>Progress: {goalProgressPercentage.toFixed(1)}%</span>
-              <span>Needs ${(incomeGoal - income) > 0 ? (incomeGoal - income).toLocaleString() : 0} to reach target</span>
+              <span>Needs ₹{(incomeGoal - income) > 0 ? (incomeGoal - income).toLocaleString() : 0} to reach target</span>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
                         </div>
                       </div>
                       <div style={barValue}>
-                        <strong>${cat.value.toLocaleString()}</strong>
+                        <strong>₹{cat.value.toLocaleString()}</strong>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
                           ({share.toFixed(0)}%)
                         </span>
@@ -249,7 +249,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ ...ledgerValueStyle(trans.type), fontWeight: '700' }}>
-                    {trans.type === 'income' ? '+' : '-'}${trans.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {trans.type === 'income' ? '+' : '-'}₹{trans.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
                   <button 
                     onClick={() => handleDeleteTransaction(trans.id)}
@@ -295,7 +295,7 @@ export default function FinanceTracker({ finances, setFinances }: FinanceTracker
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
-                  <label>Amount ($ USD)</label>
+                  <label>Amount (₹ INR)</label>
                   <input 
                     type="number" 
                     className="input-field" 

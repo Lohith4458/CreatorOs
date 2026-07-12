@@ -8,8 +8,11 @@ import {
   Users, 
   ArrowUpRight, 
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  IndianRupee
 } from 'lucide-react';
+import FinanceTracker from './FinanceTracker';
+import CompetitorTracker from './CompetitorTracker';
 
 type Platform = 'youtube' | 'tiktok' | 'instagram' | 'twitter';
 
@@ -85,7 +88,20 @@ const mockAnalytics: Record<Platform, AnalyticsData> = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
-export default function AnalyticsDashboard() {
+export default function AnalyticsDashboard({ 
+  finances, 
+  setFinances, 
+  competitors, 
+  setCompetitors, 
+  apiKey 
+}: {
+  finances: any[];
+  setFinances: React.Dispatch<React.SetStateAction<any[]>>;
+  competitors: any[];
+  setCompetitors: React.Dispatch<React.SetStateAction<any[]>>;
+  apiKey: string;
+}) {
+  const [activeSubTab, setActiveSubTab] = useState<'growth' | 'finances' | 'competitors'>('growth');
   const [platform, setPlatform] = useState<Platform>('youtube');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stats, setStats] = useState<Record<Platform, AnalyticsData>>(mockAnalytics);
@@ -152,186 +168,210 @@ export default function AnalyticsDashboard() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
-      {/* Header */}
-      <div style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <BarChart3 size={24} color="#6366f1" />
-          <h1>Social Media Analytics</h1>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-secondary" onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-            <span>{isRefreshing ? 'Syncing...' : 'Sync Channels'}</span>
-          </button>
-          
-          <button className="btn btn-primary" onClick={() => setIsUpdateModalOpen(true)}>
-            <span>Override Metrics</span>
-          </button>
-        </div>
+      {/* Sub-tab Selector */}
+      <div style={subTabsStyle}>
+        <button onClick={() => setActiveSubTab('growth')} style={subTabButtonStyle(activeSubTab === 'growth')}>
+          <BarChart3 size={15} />
+          <span>Social Growth</span>
+        </button>
+        <button onClick={() => setActiveSubTab('finances')} style={subTabButtonStyle(activeSubTab === 'finances')}>
+          <IndianRupee size={15} />
+          <span>Revenue Hub</span>
+        </button>
+        <button onClick={() => setActiveSubTab('competitors')} style={subTabButtonStyle(activeSubTab === 'competitors')}>
+          <Users size={15} />
+          <span>Competitors</span>
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div style={tabsContainer}>
-        {(['youtube', 'tiktok', 'instagram', 'twitter'] as const).map(p => (
-          <button
-            key={p}
-            onClick={() => setPlatform(p)}
-            style={tabButtonStyle(platform === p, p)}
-          >
-            <span style={{ textTransform: 'capitalize' }}>{p}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Metric Cards Grid */}
-      <div className="metric-grid">
-        {/* Metric 1 */}
-        <div className="glass-panel metric-card">
-          <div className="metric-card-header">
-            <span>{platform === 'youtube' ? 'Subscribers' : 'Followers'}</span>
-            <Users size={16} color="var(--color-primary)" />
-          </div>
-          <div className="metric-card-value">{activeStats.subscribers.value}</div>
-          <div className={`metric-card-change ${activeStats.subscribers.isUp ? 'up' : 'down'}`}>
-            <span>{activeStats.subscribers.change}</span>
-          </div>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="glass-panel metric-card">
-          <div className="metric-card-header">
-            <span>Monthly Views</span>
-            <Eye size={16} color="#10b981" />
-          </div>
-          <div className="metric-card-value">{activeStats.views.value}</div>
-          <div className={`metric-card-change ${activeStats.views.isUp ? 'up' : 'down'}`}>
-            <span>{activeStats.views.change}</span>
-          </div>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="glass-panel metric-card">
-          <div className="metric-card-header">
-            <span>Watch Time</span>
-            <Clock size={16} color="#f59e0b" />
-          </div>
-          <div className="metric-card-value">{activeStats.watchTime.value}</div>
-          <div className={`metric-card-change ${activeStats.watchTime.isUp ? 'up' : 'down'}`}>
-            <span>{activeStats.watchTime.change}</span>
-          </div>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="glass-panel metric-card">
-          <div className="metric-card-header">
-            <span>Engagement Rate</span>
-            <ThumbsUp size={16} color="#ec4899" />
-          </div>
-          <div className="metric-card-value">{activeStats.engagement.value}</div>
-          <div className={`metric-card-change ${activeStats.engagement.isUp ? 'up' : 'down'}`}>
-            <span>{activeStats.engagement.change}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Analytics Charts & Traffic Split */}
-      <div style={splitLayout}>
-        
-        {/* Left Column: Growth Chart */}
-        <div className="glass-panel" style={{ ...cardPanelStyle, flex: 1.8, minWidth: '350px' }}>
-          <div style={chartHeaderStyle}>
-            <h2>Monthly View Trend</h2>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Values in thousands (K)</span>
-          </div>
-          
-          <div style={svgChartWrapper}>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={svgChartElement}>
-              <defs>
-                <linearGradient id="gradient-area" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              
-              {/* Grid Lines */}
-              <line x1="0" y1="30" x2={chartWidth} y2="30" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-              <line x1="0" y1="75" x2={chartWidth} y2="75" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-              <line x1="0" y1="120" x2={chartWidth} y2="120" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-              
-              {/* Shaded Area */}
-              <path d={areaPath} fill="url(#gradient-area)" />
-              
-              {/* Smooth Line */}
-              <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-              
-              {/* Nodes circles */}
-              {points.map((p, idx) => (
-                <g key={idx}>
-                  <circle cx={p.x} cy={p.y} r="5" fill="#080b11" stroke="#6366f1" strokeWidth="2" />
-                  <text x={p.x} y={p.y - 12} fill="var(--text-main)" fontSize="9" fontWeight="600" textAnchor="middle">
-                    {activeStats.viewsHistory[idx]}K
-                  </text>
-                </g>
-              ))}
-            </svg>
-          </div>
-
-          <div style={monthLabelRow}>
-            {MONTHS.map(m => (
-              <span key={m} style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{m}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column: Traffic Sources */}
-        <div className="glass-panel" style={{ ...cardPanelStyle, flex: 1.2, minWidth: '300px' }}>
-          <h2>Traffic Source Share</h2>
-          <div style={trafficList}>
-            {activeStats.trafficSources.map((source, idx) => (
-              <div key={idx} style={trafficItem}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontWeight: '500' }}>{source.name}</span>
-                  <strong>{source.pct}%</strong>
-                </div>
-                <div style={trafficTrack}>
-                  <div style={trafficFill(source.pct, idx)} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      {/* OVERRIDE METRICS MODAL */}
-      {isUpdateModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
-            <div className="modal-header">
-              <h3>Override {platform.toUpperCase()} Stats</h3>
-              <button className="modal-close" onClick={() => setIsUpdateModalOpen(false)}>&times;</button>
+      {activeSubTab === 'growth' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Header */}
+          <div style={headerStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <BarChart3 size={24} color="#6366f1" />
+              <h1>Social Media Analytics</h1>
             </div>
-            <form onSubmit={handleUpdateMetricsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="form-group">
-                <label>Set Total Followers / Subscribers</label>
-                <input
-                  type="number"
-                  className="input-field"
-                  value={editSubs}
-                  onChange={(e) => setEditSubs(e.target.value)}
-                  placeholder="e.g. 150000"
-                  required
-                />
-              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsUpdateModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Update Metrics</button>
-              </div>
-            </form>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button className="btn btn-secondary" onClick={handleRefresh} disabled={isRefreshing}>
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                <span>{isRefreshing ? 'Syncing...' : 'Sync Channels'}</span>
+              </button>
+              
+              <button className="btn btn-primary" onClick={() => setIsUpdateModalOpen(true)}>
+                <span>Override Metrics</span>
+              </button>
+            </div>
           </div>
+
+          {/* Tabs */}
+          <div style={tabsContainer}>
+            {(['youtube', 'tiktok', 'instagram', 'twitter'] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setPlatform(p)}
+                style={tabButtonStyle(platform === p, p)}
+              >
+                <span style={{ textTransform: 'capitalize' }}>{p}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Metric Cards Grid */}
+          <div className="metric-grid">
+            {/* Metric 1 */}
+            <div className="glass-panel metric-card">
+              <div className="metric-card-header">
+                <span>{platform === 'youtube' ? 'Subscribers' : 'Followers'}</span>
+                <Users size={16} color="var(--color-primary)" />
+              </div>
+              <div className="metric-card-value">{activeStats.subscribers.value}</div>
+              <div className={`metric-card-change ${activeStats.subscribers.isUp ? 'up' : 'down'}`}>
+                <span>{activeStats.subscribers.change}</span>
+              </div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="glass-panel metric-card">
+              <div className="metric-card-header">
+                <span>Monthly Views</span>
+                <Eye size={16} color="#10b981" />
+              </div>
+              <div className="metric-card-value">{activeStats.views.value}</div>
+              <div className={`metric-card-change ${activeStats.views.isUp ? 'up' : 'down'}`}>
+                <span>{activeStats.views.change}</span>
+              </div>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="glass-panel metric-card">
+              <div className="metric-card-header">
+                <span>Watch Time</span>
+                <Clock size={16} color="#f59e0b" />
+              </div>
+              <div className="metric-card-value">{activeStats.watchTime.value}</div>
+              <div className={`metric-card-change ${activeStats.watchTime.isUp ? 'up' : 'down'}`}>
+                <span>{activeStats.watchTime.change}</span>
+              </div>
+            </div>
+
+            {/* Metric 4 */}
+            <div className="glass-panel metric-card">
+              <div className="metric-card-header">
+                <span>Engagement Rate</span>
+                <ThumbsUp size={16} color="#ec4899" />
+              </div>
+              <div className="metric-card-value">{activeStats.engagement.value}</div>
+              <div className={`metric-card-change ${activeStats.engagement.isUp ? 'up' : 'down'}`}>
+                <span>{activeStats.engagement.change}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Analytics Charts & Traffic Split */}
+          <div style={splitLayout}>
+            {/* Left Column: Growth Chart */}
+            <div className="glass-panel" style={{ ...cardPanelStyle, flex: 1.8, minWidth: '350px' }}>
+              <div style={chartHeaderStyle}>
+                <h2>Monthly View Trend</h2>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Values in thousands (K)</span>
+              </div>
+              
+              <div style={svgChartWrapper}>
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={svgChartElement}>
+                  <defs>
+                    <linearGradient id="growthAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Grid Lines */}
+                  <line x1="0" y1={chartHeight - 10} x2={chartWidth} y2={chartHeight - 10} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                  <line x1="0" y1={chartHeight / 2} x2={chartWidth} y2={chartHeight / 2} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                  <line x1="0" y1="15" x2={chartWidth} y2="15" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                  
+                  {/* Paths */}
+                  <path d={areaPath} fill="url(#growthAreaGrad)" />
+                  <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="3" />
+                  
+                  {/* Points */}
+                  {points.map((p, idx) => (
+                    <g key={idx}>
+                      <circle cx={p.x} cy={p.y} r="5" fill="#6366f1" stroke="#0a0f1d" strokeWidth="2" />
+                      <text x={p.x} y={p.y - 10} fill="var(--text-main)" fontSize="9" fontWeight="600" textAnchor="middle">
+                        {activeStats.viewsHistory[idx]}K
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+                
+                <div style={monthLabelRow}>
+                  {MONTHS.map((m, idx) => (
+                    <span key={idx} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '500' }}>{m}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Traffic Sources */}
+            <div className="glass-panel" style={{ ...cardPanelStyle, flex: 1.2, minWidth: '280px' }}>
+              <h2>Traffic Sources Split</h2>
+              <div style={trafficList}>
+                {activeStats.trafficSources.map((source, idx) => (
+                  <div key={idx} style={trafficItem}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: '500' }}>{source.name}</span>
+                      <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>{source.pct}%</span>
+                    </div>
+                    <div style={trafficTrack}>
+                      <div style={trafficFill(source.pct, idx)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* OVERRIDE METRICS MODAL */}
+          {isUpdateModalOpen && (
+            <div className="modal-overlay">
+              <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
+                <div className="modal-header">
+                  <h3>Override {platform.toUpperCase()} Stats</h3>
+                  <button className="modal-close" onClick={() => setIsUpdateModalOpen(false)}>&times;</button>
+                </div>
+                <form onSubmit={handleUpdateMetricsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Set Total Followers / Subscribers</label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editSubs}
+                      onChange={(e) => setEditSubs(e.target.value)}
+                      placeholder="e.g. 150000"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setIsUpdateModalOpen(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary">Update Metrics</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {activeSubTab === 'finances' && (
+        <FinanceTracker finances={finances} setFinances={setFinances} />
+      )}
+
+      {activeSubTab === 'competitors' && (
+        <CompetitorTracker competitors={competitors} setCompetitors={setCompetitors} apiKey={apiKey} />
       )}
 
     </div>
@@ -447,3 +487,29 @@ const trafficFill = (pct: number, index: number): React.CSSProperties => {
     borderRadius: '4px',
   };
 };
+
+const subTabsStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: '0.5rem',
+  padding: '6px',
+  borderRadius: 'var(--radius-md)',
+  background: 'rgba(0, 0, 0, 0.25)',
+  border: '1px solid rgba(255, 255, 255, 0.05)',
+  alignSelf: 'flex-start',
+};
+
+const subTabButtonStyle = (isActive: boolean): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  padding: '0.6rem 1.2rem',
+  fontSize: '0.85rem',
+  fontWeight: '600',
+  borderRadius: '6px',
+  border: '1px solid transparent',
+  cursor: 'pointer',
+  background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'none',
+  borderColor: isActive ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+  color: isActive ? '#ffffff' : 'var(--text-muted)',
+  transition: 'all var(--transition-fast)',
+});

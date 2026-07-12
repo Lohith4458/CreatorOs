@@ -17,11 +17,13 @@ interface Task {
   status: 'todo' | 'in-progress' | 'review' | 'completed';
   dueDate?: string;
   notes?: string;
+  assignee?: string;
 }
 
 interface TaskManagerProps {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  teamMembers?: any[];
 }
 
 const PRIORITY_COLORS = {
@@ -30,7 +32,7 @@ const PRIORITY_COLORS = {
   low: '#3b82f6'
 };
 
-export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
+export default function TaskManager({ tasks, setTasks, teamMembers }: TaskManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -41,6 +43,7 @@ export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
   const [status, setStatus] = useState<Task['status']>('todo');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [assignee, setAssignee] = useState('');
 
   // Submit Handler
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -53,7 +56,8 @@ export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
       priority,
       status,
       dueDate: dueDate || undefined,
-      notes: notes || undefined
+      notes: notes || undefined,
+      assignee: assignee || undefined
     };
 
     setTasks(prev => [newTask, ...prev]);
@@ -62,6 +66,7 @@ export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
     setStatus('todo');
     setDueDate('');
     setNotes('');
+    setAssignee('');
     setIsAddModalOpen(false);
   };
 
@@ -202,6 +207,14 @@ export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
                     >
                       {task.priority.toUpperCase()}
                     </span>
+                    {task.assignee && (
+                      <>
+                        <span style={dotDivider} />
+                        <span style={{ color: '#8b5cf6', fontWeight: '600', fontSize: '0.78rem' }}>
+                          👤 {task.assignee}
+                        </span>
+                      </>
+                    )}
                     {task.dueDate && (
                       <>
                         <span style={dotDivider} />
@@ -305,6 +318,22 @@ export default function TaskManager({ tasks, setTasks }: TaskManagerProps) {
                   onChange={(e) => setDueDate(e.target.value)} 
                 />
               </div>
+
+              {teamMembers && teamMembers.length > 0 && (
+                <div className="form-group">
+                  <label>Assignee</label>
+                  <select 
+                    className="select-field" 
+                    value={assignee} 
+                    onChange={(e) => setAssignee(e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map(member => (
+                      <option key={member.id} value={member.name}>{member.name} ({member.role})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Context / Notes</label>
