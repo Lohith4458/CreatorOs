@@ -17,9 +17,11 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   creatorName: string;
   creatorNiche: string;
+  profileImage?: string;
+  onLogout?: () => void;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorNiche }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorNiche, profileImage, onLogout }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'ai-studio', label: 'AI Studio', icon: Bot },
@@ -64,9 +66,17 @@ export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorN
       </nav>
 
       <div className="sidebar-profile" style={profileCardStyle}>
-        <div style={avatarStyle}>
-          {(!creatorName || creatorName === 'Creator Pro') ? 'A' : creatorName.charAt(0).toUpperCase()}
-        </div>
+        {profileImage ? (
+          <img 
+            src={profileImage} 
+            alt={creatorName} 
+            style={{ ...avatarStyle, objectFit: 'cover' }} 
+          />
+        ) : (
+          <div style={avatarStyle}>
+            {(!creatorName || creatorName === 'Creator Pro') ? 'A' : creatorName.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div style={profileInfoStyle}>
           <div style={profileNameStyle}>{(!creatorName || creatorName === 'Creator Pro') ? 'Abdul' : creatorName}</div>
           <div style={profileNicheStyle}>{creatorNiche || 'Content Creator'}</div>
@@ -74,8 +84,8 @@ export default function Sidebar({ activeTab, setActiveTab, creatorName, creatorN
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
           <div style={proBadgeStyle}>PRO</div>
           <button 
-            onClick={() => setActiveTab('landing')}
-            title="Exit to Landing Page"
+            onClick={onLogout || (() => setActiveTab('landing'))}
+            title={onLogout ? "Logout" : "Exit to Landing Page"}
             style={logoutBtnStyle}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';

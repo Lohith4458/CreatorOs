@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CalendarApp from './components/CalendarApp';
@@ -15,6 +15,9 @@ import SettingsPanel from './components/SettingsPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import LandingPage from './components/LandingPage';
 import TeamManager from './components/TeamManager';
+import AuthModal from './components/AuthModal';
+import { api } from './services/api';
+import type { UserProfile } from './services/api';
 
 // ----------------------------------------------------
 // Default Starter Data (For Instant User Wow Factor)
@@ -206,6 +209,48 @@ export default function App() {
   // Cross-App selected item redirect state
   const [selectedEventForAI, setSelectedEventForAI] = useState<any | null>(null);
 
+  // Authentication & Profile states
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('creatoros_token'));
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('creatoros_token');
+    setToken(null);
+    setUser(null);
+    setActiveTab('landing');
+  };
+
+  // Sync user profile from backend when token is present
+  useEffect(() => {
+    if (token) {
+      api.getProfile()
+        .then((profile) => {
+          setUser(profile);
+          setCreatorName(profile.name);
+          if (profile.niche) setCreatorNiche(profile.niche);
+          if (profile.apiKey) setApiKey(profile.apiKey);
+        })
+        .catch((err) => {
+          console.error('Session expired or invalid token:', err);
+          handleLogout();
+        });
+    } else {
+      setUser(null);
+    }
+  }, [token]);
+
+  const handleAuthSuccess = (newToken: string, authenticatedUser: UserProfile) => {
+    localStorage.setItem('creatoros_token', newToken);
+    setToken(newToken);
+    setUser(authenticatedUser);
+    setCreatorName(authenticatedUser.name);
+    if (authenticatedUser.niche) setCreatorNiche(authenticatedUser.niche);
+    if (authenticatedUser.apiKey) setApiKey(authenticatedUser.apiKey);
+    setShowAuthModal(false);
+    setActiveTab('dashboard');
+  };
+
   // Local Storage States
   const [apiKey, setApiKey] = useLocalStorage<string>('creatoros_api_key', '');
   const [creatorName, setCreatorName] = useLocalStorage<string>('creatoros_name', 'Abdul');
@@ -290,6 +335,8 @@ export default function App() {
           setActiveTab={setActiveTab} 
           creatorName={creatorName}
           creatorNiche={creatorNiche}
+          profileImage={user?.profileImage || ''}
+          onLogout={handleLogout}
         />
       )}
 
@@ -298,7 +345,13 @@ export default function App() {
         <div className={activeTab === 'landing' ? "landing-body" : "content-body"}>
           {activeTab === 'landing' && (
             <LandingPage 
-              onGetStarted={() => setActiveTab('dashboard')}
+              onGetStarted={() => {
+                if (token) {
+                  setActiveTab('dashboard');
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
             />
           )}
 
@@ -384,10 +437,19 @@ export default function App() {
               onImportData={handleImportBackup}
               onExportData={handleExportBackup}
               setActiveTab={setActiveTab}
+              user={user}
+              onLogout={handleLogout}
             />
           )}
         </div>
       </div>
+
+      {showAuthModal && (
+        <AuthModal 
+          onSuccess={handleAuthSuccess}
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
 
     </div>
   );

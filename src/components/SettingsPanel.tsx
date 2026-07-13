@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Key, 
@@ -10,8 +10,11 @@ import {
   EyeOff, 
   Check, 
   HelpCircle,
-  Tv
+  Tv,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
+import { api } from '../services/api';
 
 interface SettingsPanelProps {
   apiKey: string;
@@ -24,6 +27,8 @@ interface SettingsPanelProps {
   onImportData: (jsonData: string) => boolean;
   onExportData: () => string;
   setActiveTab: (tab: string) => void;
+  user?: any;
+  onLogout?: () => void;
 }
 
 export default function SettingsPanel({
@@ -36,10 +41,13 @@ export default function SettingsPanel({
   onClearData,
   onImportData,
   onExportData,
-  setActiveTab
+  setActiveTab,
+  user,
+  onLogout
 }: SettingsPanelProps) {
   const [showKey, setShowKey] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
 
@@ -47,14 +55,113 @@ export default function SettingsPanel({
   const [formName, setFormName] = useState(creatorName);
   const [formNiche, setFormNiche] = useState(creatorNiche);
   const [formKey, setFormKey] = useState(apiKey);
+  
+  // Profile picture state
+  const [profileImage, setProfileImage] = useState<string>(user?.profileImage || '');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  // Password change states
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Sync state with parent props if they change
+  useEffect(() => {
+    setFormName(creatorName);
+    setFormNiche(creatorNiche);
+    setFormKey(apiKey);
+  }, [creatorName, creatorNiche, apiKey]);
+
+  useEffect(() => {
+    if (user?.profileImage) {
+      setProfileImage(user.profileImage);
+    }
+  }, [user]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreatorName(formName);
-    setCreatorNiche(formNiche);
-    setApiKey(formKey);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2000);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      if (user) {
+        // Authenticated fullstack update
+        const updated = await api.updateProfile({
+          name: formName,
+          niche: formNiche,
+          apiKey: formKey
+        });
+        
+        // Update local React states
+        setCreatorName(updated.name);
+        if (updated.niche) setCreatorNiche(updated.niche);
+        if (updated.apiKey) setApiKey(updated.apiKey);
+      } else {
+        // Local-only fallback
+        setCreatorName(formName);
+        setCreatorNiche(formNiche);
+        setApiKey(formKey);
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to update profile settings.');
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      if (user) {
+        const response = await api.uploadProfileImage(file);
+        setProfileImage(response.profileImage);
+        // Triggers re-fetch/sync in App.tsx by updating user reference if parent holds it,
+        // or just display locally since state updates immediately
+        if (user) {
+          user.profileImage = response.profileImage;
+        }
+      } else {
+        // Local-only mock using FileReader base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setProfileImage(event.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err: any) {
+      setUploadError(err.message || 'Image upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordLoading(true);
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    try {
+      await api.changePassword({ oldPassword, newPassword });
+      setPasswordSuccess(true);
+      setOldPassword('');
+      setNewPassword('');
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to update password.');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -82,7 +189,6 @@ export default function SettingsPanel({
           const ok = onImportData(parsed);
           if (ok) {
             setImportSuccess(true);
-            // Refresh form fields
             const dataObj = JSON.parse(parsed);
             if (dataObj.settings) {
               setFormName(dataObj.settings.creatorName || '');
@@ -106,7 +212,24 @@ export default function SettingsPanel({
       setFormName('Creator Pro');
       setFormNiche('Tech & Productivity');
       setFormKey('');
+      setProfileImage('');
       alert('Workspace reset successful.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirm('🚨 CRITICAL WARNING: This will permanently DELETE your profile account, API keys, and all related server credentials. This action CANNOT be undone. Do you wish to proceed?')) {
+      try {
+        await api.deleteAccount();
+        alert('Account deleted successfully.');
+        if (onLogout) {
+          onLogout();
+        } else {
+          setActiveTab('landing');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete account.');
+      }
     }
   };
 
@@ -135,6 +258,40 @@ export default function SettingsPanel({
         {/* Left Side: API Key & Profile Form */}
         <div className="glass-panel" style={{ ...cardPanel, flex: 1.5, minWidth: '320px' }}>
           <h2>Creator Configuration</h2>
+          
+          {/* Profile Picture Upload Section */}
+          <div style={avatarUploadContainerStyle}>
+            {profileImage ? (
+              <img 
+                src={profileImage} 
+                alt="Profile Avatar" 
+                style={uploadAvatarStyle} 
+              />
+            ) : (
+              <div style={uploadAvatarFallbackStyle}>
+                {formName ? formName.charAt(0).toUpperCase() : 'C'}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>Profile Picture</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginBottom: '4px' }}>
+                Supports PNG, JPG (Max 5MB). Direct Cloudinary synchronization.
+              </span>
+              <label className="btn btn-secondary" style={uploadLabelStyle}>
+                <Upload size={13} />
+                <span>{uploading ? 'Uploading picture...' : 'Choose image'}</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                  style={{ display: 'none' }} 
+                  disabled={uploading} 
+                />
+              </label>
+              {uploadError && <span style={{ fontSize: '0.72rem', color: '#f87171' }}>{uploadError}</span>}
+            </div>
+          </div>
+
           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '0.5rem' }}>
             
             {/* User Profile */}
@@ -198,24 +355,72 @@ export default function SettingsPanel({
                 </button>
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)' }}>
-                Your API key is saved locally in your browser cache and is never sent to any external server other than Google's secure AI API.
+                Your API key is saved {user ? 'securely in the cloud database' : 'locally in your browser cache'} and is never exposed.
               </span>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+            {/* Save Profile Button */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
               <button type="submit" className="btn btn-primary">
                 {saveSuccess ? <Check size={16} /> : null}
-                <span>{saveSuccess ? 'Saved successfully!' : 'Save Profile & Keys'}</span>
+                <span>{saveSuccess ? 'Changes saved successfully!' : 'Save Profile & Keys'}</span>
               </button>
+              {saveError && <span style={{ fontSize: '0.75rem', color: '#f87171', textAlign: 'center' }}>{saveError}</span>}
             </div>
 
           </form>
         </div>
 
-        {/* Right Side: Backups & Danger Zone */}
+        {/* Right Side: Backups & Security & Danger Zone */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, minWidth: '300px' }}>
           
+          {/* Security Panel (Change Password) - Only if logged in */}
+          {user && (
+            <div className="glass-panel" style={cardPanel}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Lock size={18} color="#8b5cf6" />
+                <h2>Security & Password</h2>
+              </div>
+              
+              <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.2rem' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Current Password</label>
+                  <input
+                    type="password"
+                    className="input-field"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>New Password</label>
+                  <input
+                    type="password"
+                    className="input-field"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-secondary" 
+                  disabled={passwordLoading}
+                  style={{ justifyContent: 'center', marginTop: '0.4rem' }}
+                >
+                  {passwordSuccess ? <Check size={14} /> : null}
+                  <span>{passwordSuccess ? 'Password Updated!' : passwordLoading ? 'Updating...' : 'Change Password'}</span>
+                </button>
+                {passwordError && <span style={{ fontSize: '0.72rem', color: '#f87171', textAlign: 'center' }}>{passwordError}</span>}
+              </form>
+            </div>
+          )}
+
           {/* Backups Panel */}
           <div className="glass-panel" style={cardPanel}>
             <h2>Workspace Backup</h2>
@@ -256,17 +461,41 @@ export default function SettingsPanel({
           <div className="glass-panel" style={{ ...cardPanel, border: '1px solid rgba(239, 68, 68, 0.25)' }}>
             <h2 style={{ color: 'var(--color-danger)' }}>Danger Zone</h2>
             <p style={descriptionText}>
-              Permanently wipe all workspace tables (Calendar, sponsor deals, asset files, and local logs) from browser cache storage.
+              Permanently wipe all local workspace details from browser cache, or completely delete your authenticated cloud profile account.
             </p>
             
-            <button 
-              className="btn btn-danger" 
-              onClick={handleResetData}
-              style={{ justifyContent: 'center', marginTop: '0.5rem' }}
-            >
-              <Trash2 size={15} />
-              <span>Clear Workspace Database</span>
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button 
+                className="btn btn-danger-outline" 
+                onClick={handleResetData}
+                style={{ 
+                  justifyContent: 'center', 
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171',
+                  padding: '0.6rem 1rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Trash2 size={15} />
+                <span>Clear Local Cache Database</span>
+              </button>
+              
+              {user && (
+                <button 
+                  className="btn btn-danger" 
+                  onClick={handleDeleteAccount}
+                  style={{ justifyContent: 'center' }}
+                >
+                  <AlertCircle size={15} />
+                  <span>Delete Profile Account</span>
+                </button>
+              )}
+            </div>
           </div>
 
         </div>
@@ -298,6 +527,51 @@ const cardPanel: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '1rem',
+};
+
+const avatarUploadContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '1.25rem',
+  padding: '1rem',
+  borderRadius: '10px',
+  background: 'rgba(255, 255, 255, 0.02)',
+  border: '1px solid rgba(255, 255, 255, 0.05)',
+  marginBottom: '0.5rem'
+};
+
+const uploadAvatarStyle: React.CSSProperties = {
+  width: '64px',
+  height: '64px',
+  borderRadius: '50%',
+  objectFit: 'cover',
+  border: '2px solid #6366f1',
+  boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)'
+};
+
+const uploadAvatarFallbackStyle: React.CSSProperties = {
+  width: '64px',
+  height: '64px',
+  borderRadius: '50%',
+  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  fontWeight: 'bold',
+  fontSize: '1.4rem',
+  color: 'white',
+  boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)'
+};
+
+const uploadLabelStyle: React.CSSProperties = {
+  padding: '0.4rem 0.8rem',
+  fontSize: '0.75rem',
+  cursor: 'pointer',
+  margin: 0,
+  alignSelf: 'flex-start',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px'
 };
 
 const labelRowStyle: React.CSSProperties = {
