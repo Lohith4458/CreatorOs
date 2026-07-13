@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -25,6 +25,7 @@ interface TeamMember {
 interface TeamManagerProps {
   tasks: any[];
   setTasks: React.Dispatch<React.SetStateAction<any[]>>;
+  creatorName: string;
 }
 
 const DEFAULT_TEAM = [
@@ -36,8 +37,21 @@ const DEFAULT_TEAM = [
 
 const MEMBER_COLORS = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
-export default function TeamManager({ tasks, setTasks }: TeamManagerProps) {
+export default function TeamManager({ tasks, setTasks, creatorName }: TeamManagerProps) {
   const [team, setTeam] = useLocalStorage<TeamMember[]>('creatoros_team_members', DEFAULT_TEAM);
+  
+  // Synchronize creator name with the owner team member dynamically
+  useEffect(() => {
+    if (creatorName) {
+      setTeam(prev => 
+        prev.map(member => 
+          member.id === 'tm1' || member.role.includes('Owner')
+            ? { ...member, name: creatorName, email: `${creatorName.toLowerCase().replace(/\s+/g, '')}@creatoros.com` }
+            : member
+        )
+      );
+    }
+  }, [creatorName, setTeam]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   
   // Form state
@@ -74,7 +88,8 @@ export default function TeamManager({ tasks, setTasks }: TeamManagerProps) {
   };
 
   const handleRemoveMember = (id: string, memberName: string) => {
-    if (memberName === 'Abdul') {
+    const owner = team.find(m => m.id === 'tm1' || m.role.includes('Owner'));
+    if (id === owner?.id) {
       alert("You cannot remove the channel owner.");
       return;
     }
@@ -129,7 +144,7 @@ export default function TeamManager({ tasks, setTasks }: TeamManagerProps) {
                   </div>
                 </div>
                 
-                {member.name !== 'Abdul' && (
+                {member.id !== 'tm1' && !member.role.includes('Owner') && (
                   <button 
                     onClick={() => handleRemoveMember(member.id, member.name)} 
                     style={removeBtnStyle}

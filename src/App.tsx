@@ -422,6 +422,7 @@ export default function App() {
             <TeamManager 
               tasks={tasks}
               setTasks={setTasks}
+              creatorName={creatorName}
             />
           )}
 
